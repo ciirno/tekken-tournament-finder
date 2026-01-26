@@ -1,51 +1,68 @@
+"use client"; // Required for useState and onClick
+
+import { useState, useEffect } from "react";
 import TournamentCard from "@/components/TournamentCard";
 import TournamentFilters from "@/components/TournamentFilters";
 import { ITournament } from "@/models/Tournament";
 
-// We pass searchParams as a prop to the server component
-export default async function Home({
+export default function Home({
   searchParams,
 }: {
   searchParams: { status?: string };
 }) {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [data, setData] = useState<ITournament[]>([]);
   const status = searchParams.status;
 
-  // Fetch data (this calls your API route)
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/tournaments`,
-    {
-      cache: "no-store",
-    },
-  );
-  const { data }: { data: ITournament[] } = await res.json();
+  // Since we are now a client component, we fetch data inside useEffect
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch("/api/tournaments", { cache: "no-store" });
+      const json = await res.json();
+      setData(json.data);
+    };
+    fetchData();
+  }, []);
 
-  // Apply filtering logic based on the URL status
   const filteredTournaments = data.filter((t) => {
-    const isOngoing = new Date(t.date) <= new Date() && t.isOngoing;
+    // Basic logic for filtering - ensure ITournament has these fields
+    const isOngoing = t.isOngoing;
     if (status === "ongoing") return isOngoing;
     if (status === "upcoming") return !isOngoing;
-    return true; // 'all'
+    return true;
   });
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-12">
-          <h1 className="text-6xl font-black italic tracking-tighter text-red-600 mb-2">
-            TEKKEN PH
-            <span className="text-white"> TOURNAMENT FINDER</span>
-          </h1>
-          <p className="text-slate-500 font-medium">
-            Aggregated battles from Start.gg and Challonge.
-          </p>
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-6xl font-black italic tracking-tighter text-red-600 mb-2">
+              TEKKEN PH
+              <span className="text-white"> TOURNAMENT FINDER</span>
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Aggregated battles from Start.gg &#40;Challonge Soon&#41;
+            </p>
+          </div>
         </header>
 
-        <TournamentFilters />
+        <TournamentFilters viewMode={viewMode} setViewMode={setViewMode} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Dynamic Grid/List Container */}
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "flex flex-col gap-3" // Thinner gap for List View
+          }>
           {filteredTournaments.length > 0 ? (
             filteredTournaments.map((t, i) => (
-              <TournamentCard key={i} tournament={t} />
+              <TournamentCard
+                key={i}
+                tournament={t}
+                viewMode={viewMode} // Pass the mode to the card
+              />
             ))
           ) : (
             <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-800 rounded-3xl">
