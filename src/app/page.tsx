@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import TournamentCard from "@/components/TournamentCard";
 import TournamentFilters from "@/components/TournamentFilters";
 import { ITournament } from "@/models/Tournament";
+import { Suspense } from "react";
 
 export default function Home({
   searchParams,
@@ -48,8 +49,12 @@ export default function Home({
           </div>
         </header>
 
-        <TournamentFilters viewMode={viewMode} setViewMode={setViewMode} />
-
+        <Suspense
+          fallback={
+            <div className="h-10 w-full animate-pulse bg-slate-900 rounded-xl" />
+          }>
+          <TournamentFilters viewMode={viewMode} setViewMode={setViewMode} />
+        </Suspense>
         {/* Dynamic Grid/List Container */}
         <div
           className={
