@@ -1,46 +1,45 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { fetchStartGG } from "@/lib/startgg"; // Your Start.gg logic
 import dbConnect from "@/lib/dbConnect";
 import Tournament from "@/models/Tournament";
-import { fetchStartGG } from "@/lib/startgg";
-// src/app/api/tournaments/route.ts
 import { StartGGNode } from "@/types/api";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   await dbConnect();
-  const now = new Date();
+  const authHeader = req.headers.get("authorization");
+  const isCronSync = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
   try {
-    const [startgg] = await Promise.all([fetchStartGG()]);
+    // SCENARIO A: Sync Trigger (Only runs every 4 hours via Cron)
+    if (isCronSync) {
+      const freshData = await fetchStartGG();
 
-    // Map Start.gg (PH Filtered by Query already)
-    const normalizedStartGG = startgg.map((t: StartGGNode) => ({
-      title: t.name,
-      location: t.city ? `${t.city}, PH` : "Philippines (Online)",
-      date: new Date(t.startAt * 1000),
-      gameVersion: "Tekken 8",
-      registrationLink: `https://start.gg${t.url}`,
-      isOngoing: t.startAt * 1000 <= now.getTime(),
-    }));
+      const ops = freshData.map((t: StartGGNode) => ({
+        updateOne: {
+          filter: { externalId: t.id }, // Ensure your model has an externalId
+          update: { $set: t },
+          upsert: true,
+        },
+      }));
 
-    const combined = [...normalizedStartGG];
-
-    // MongoDB Upsert
-    for (const t of combined) {
-      await Tournament.findOneAndUpdate({ title: t.title }, t, {
-        upsert: true,
+      await Tournament.bulkWrite(ops);
+      return NextResponse.json({
+        message: "Sync complete",
+        count: freshData.length,
       });
     }
 
-    const count = await Tournament.countDocuments();
-    console.log(`📊 Current total tournaments in DB: ${count}`);
+    // SCENARIO B: Frontend Fetch (Always hits MongoDB)
+    const now = new Date();
+    const tournaments = await Tournament.find({
+      date: { $gte: now }, // Only show current/future tournaments
+    }).sort({ date: 1 });
 
-    // Final clean fetch from DB: only future/ongoing PH tournaments
-    const all = await Tournament.find({ date: { $gte: now } }).sort({
-      date: 1,
-    });
-
-    return NextResponse.json({ success: true, data: all });
+    return NextResponse.json({ success: true, data: tournaments });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "API Error" },
+      { status: 500 },
+    );
   }
 }

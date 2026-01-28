@@ -1,9 +1,11 @@
 // Start.gg GraphQL Response Types
 export interface StartGGNode {
+  id: number | string;
   name: string;
   startAt: number;
-  city: string | null;
+  city?: string;
   url: string;
+  images?: { url: string; type: string }[];
 }
 
 export interface StartGGResponse {

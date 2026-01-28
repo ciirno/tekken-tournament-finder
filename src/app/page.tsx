@@ -17,7 +17,8 @@ export default function Home({
   // Since we are now a client component, we fetch data inside useEffect
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch("/api/tournaments", { cache: "no-store" });
+      // This now hits Scenario B (MongoDB)
+      const res = await fetch("/api/tournaments");
       const json = await res.json();
       setData(json.data);
     };
