@@ -24,21 +24,10 @@ export default function Home({
       const res = await fetch("/api/tournaments");
       const json = await res.json();
       setData(json.data);
+      setLoading(false);
     };
     fetchData();
   }, []);
-
-  const tournamentsArray = Array.isArray(data) ? data : [];
-
-  const filteredTournaments = tournamentsArray?.filter((t) => {
-    // Basic logic for filtering - ensure ITournament has these fields
-    const isOngoing = t?.isOngoing;
-    if (status === "ongoing") return isOngoing;
-    if (status === "upcoming") return !isOngoing;
-
-    setLoading(false);
-    return true;
-  });
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -91,8 +80,8 @@ export default function Home({
                 </svg>
               </div>
             </div>
-          ) : filteredTournaments.length > 0 ? (
-            filteredTournaments.map((t, i) => (
+          ) : data.length > 0 ? (
+            data.map((t, i) => (
               <TournamentCard
                 key={i}
                 tournament={t}
