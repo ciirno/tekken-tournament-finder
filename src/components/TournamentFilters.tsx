@@ -17,6 +17,7 @@ export default function TournamentFilters({
     { id: "all", label: "All Events" },
     { id: "ongoing", label: "Ongoing" },
     { id: "upcoming", label: "Upcoming" },
+    { id: "completed", label: "Completed" },
   ];
 
   return (
