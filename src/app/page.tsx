@@ -6,28 +6,24 @@ import TournamentFilters from "@/components/TournamentFilters";
 import { ITournament } from "@/models/Tournament";
 import { Suspense } from "react";
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { status?: string };
-}) {
+export default function Home() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [data, setData] = useState<ITournament[]>([]);
   const [loading, setLoading] = useState(false);
-  const status = searchParams.status;
-
   // Since we are now a client component, we fetch data inside useEffect
+  const [filter, setFilter] = useState("all");
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      // This now hits Scenario B (MongoDB)
-      const res = await fetch("/api/tournaments");
+      // We append the filter state to the URL
+      const res = await fetch(`/api/tournaments?status=${filter}`);
       const json = await res.json();
       setData(json.data);
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [filter]); // Re-runs when 'filter' changes!
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -48,7 +44,12 @@ export default function Home({
           fallback={
             <div className="h-10 w-full animate-pulse bg-slate-900 rounded-xl" />
           }>
-          <TournamentFilters viewMode={viewMode} setViewMode={setViewMode} />
+          <TournamentFilters
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            setFilter={setFilter}
+            filter={filter}
+          />
         </Suspense>
         {/* Dynamic Grid/List Container */}
         <div
@@ -91,7 +92,7 @@ export default function Home({
           ) : (
             <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-800 rounded-3xl">
               <p className="text-slate-500 text-lg">
-                No {status} tournaments found.
+                No {filter} tournaments found.
               </p>
             </div>
           )}

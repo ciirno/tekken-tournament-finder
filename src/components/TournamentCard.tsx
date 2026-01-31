@@ -1,5 +1,6 @@
 import { ITournament } from "@/models/Tournament";
 import { Calendar, MapPin, ExternalLink } from "lucide-react";
+import { startOfDay, endOfDay } from "@/app/helpers/date";
 export default function TournamentCard({
   tournament,
   viewMode,
@@ -7,6 +8,15 @@ export default function TournamentCard({
   tournament: ITournament;
   viewMode: "grid" | "list";
 }) {
+  const tDate = new Date(tournament.date);
+
+  const getStatus = () => {
+    if (tDate < startOfDay) return "completed";
+    if (tDate >= startOfDay && tDate <= endOfDay) return "ongoing";
+    return "upcoming";
+  };
+
+  const status = getStatus();
   if (viewMode === "list") {
     return (
       <div className="group relative bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-center gap-4 hover:border-red-600/50 hover:bg-slate-900/80 transition-all">
@@ -33,9 +43,15 @@ export default function TournamentCard({
             <h3 className="font-bold text-lg leading-tight">
               {tournament.title}
             </h3>
-            {tournament.isOngoing && (
-              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white animate-pulse self-center md:self-auto">
+
+            {status === "ongoing" && (
+              <span className="bg-green-500 text-black px-2 py-0.5 rounded text-[10px] font-black animate-pulse">
                 LIVE NOW
+              </span>
+            )}
+            {status === "completed" && (
+              <span className="bg-slate-700 text-slate-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                Finished
               </span>
             )}
           </div>
@@ -68,11 +84,17 @@ export default function TournamentCard({
         </h3>
         <span
           className={`shrink-0 px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
-            tournament.isOngoing
-              ? "bg-green-500 text-black"
-              : "bg-red-600 text-white"
+            status === "ongoing"
+              ? "bg-green-500 text-black animate-pulse"
+              : status === "completed"
+                ? "bg-slate-800 text-slate-500"
+                : "bg-red-600 text-white"
           }`}>
-          {tournament.isOngoing ? "Live" : "Upcoming"}
+          {status === "ongoing"
+            ? "Live"
+            : status === "completed"
+              ? "Completed"
+              : "Upcoming"}
         </span>
       </div>
 
