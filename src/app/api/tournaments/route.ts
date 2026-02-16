@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
       const ops = freshData.map((t: StartGGNode) => ({
         updateOne: {
-          filter: { externalId: t.id }, // Ensure your model has an externalId
+          filter: { externalId: String(t.id) }, // Now valid according to ITournament
           update: { $set: t },
           upsert: true,
         },
