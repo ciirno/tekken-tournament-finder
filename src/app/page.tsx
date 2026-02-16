@@ -15,15 +15,27 @@ export default function Home() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      // We append the filter state to the URL
-      const res = await fetch(`/api/tournaments?status=${filter}`);
-      const json = await res.json();
-      setData(json.data);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const res = await fetch("/api/tournaments");
+        const json = await res.json();
+
+        // CRITICAL FIX: Ensure json.data exists before setting it
+        if (json.success && Array.isArray(json.data)) {
+          setData(json.data);
+        } else {
+          console.error("API Error:", json.error);
+          setData([]); // Set to empty array to prevent .filter() crash
+        }
+      } catch (err) {
+        console.error("Fetch failed:", err);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
-  }, [filter]); // Re-runs when 'filter' changes!
+  }, []); // Re-runs when 'filter' changes!
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
