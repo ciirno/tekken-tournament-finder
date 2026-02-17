@@ -11,6 +11,7 @@ const query = `
       }
     }) {
       nodes {
+        id
         name
         startAt
         city
