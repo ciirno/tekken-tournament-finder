@@ -10,25 +10,41 @@ export async function GET(req: NextRequest) {
   const isCronSync = authHeader === `Bearer ${process.env.CRON_SECRET}`;
 
   try {
-    // SCENARIO A: Sync Trigger (Only runs every 4 hours via Cron)
+    // Sync Trigger (Only runs every 12 am via Cron)
     if (isCronSync) {
       const freshData = await fetchStartGG();
 
       const ops = freshData.map((t: StartGGNode) => ({
         updateOne: {
-          filter: { externalId: String(t.id) }, // Now valid according to ITournament
-          update: { $set: t },
+          filter: { externalId: String(t.id) },
+          update: {
+            $set: {
+              title: t.name,
+              // CRITICAL: Start.gg returns seconds, JS needs milliseconds
+              date: new Date(t.startAt * 1000),
+              location: t.city || "Online",
+              registrationLink: `https://start.gg${t.url}`,
+              externalId: String(t.id),
+              gameVersion: "Tekken 8" as const,
+              isOngoing: false, // Default to false, logic in component handles display
+            },
+          },
           upsert: true,
         },
       }));
 
-      await Tournament.bulkWrite(ops);
+      // Perform the write and capture the result object
+      const result = await Tournament.bulkWrite(ops);
+
       return NextResponse.json({
         message: "Sync complete",
         count: freshData.length,
+        details: {
+          upserted: result.upsertedCount,
+          matched: result.matchedCount,
+        },
       });
     }
-
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status"); // 'all', 'upcoming', 'ongoing','completed'
 
@@ -42,7 +58,6 @@ export async function GET(req: NextRequest) {
     } else if (status === "completed") {
       query = { date: { $lt: startOfDay } };
     }
-    // If status is 'all' or null, query remains {} (returns everything)
     const tournaments = await Tournament.find(query).sort({ date: 1 });
     return NextResponse.json({ success: true, data: tournaments });
   } catch (error) {
