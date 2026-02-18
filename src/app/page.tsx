@@ -11,7 +11,7 @@ export default function Home() {
   const [data, setData] = useState<ITournament[]>([]);
   const [loading, setLoading] = useState(false);
   // Since we are now a client component, we fetch data inside useEffect
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("upcoming");
 
   useEffect(() => {
     const fetchData = async () => {

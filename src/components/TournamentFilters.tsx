@@ -14,10 +14,10 @@ export default function TournamentFilters({
   setFilter,
 }: FilterProps) {
   const categories = [
-    { id: "all", label: "All Events" },
-    { id: "ongoing", label: "Ongoing" },
     { id: "upcoming", label: "Upcoming" },
+    { id: "ongoing", label: "Ongoing" },
     { id: "completed", label: "Completed" },
+    { id: "all", label: "All Events" },
   ];
 
   return (
