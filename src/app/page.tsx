@@ -17,7 +17,7 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/tournaments");
+        const res = await fetch(`/api/tournaments?status=${filter}`);
         const json = await res.json();
 
         // CRITICAL FIX: Ensure json.data exists before setting it
@@ -35,7 +35,7 @@ export default function Home() {
       }
     };
     fetchData();
-  }, []); // Re-runs when 'filter' changes!
+  }, [filter]); // Re-runs when 'filter' changes!
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
